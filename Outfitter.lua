@@ -916,6 +916,36 @@ local	Outfitter_cShapeshiftSpecialIDs =
 	[Outfitter_cStealth] = {ID = "Stealth"},
 };
 
+-- ClassicAPI GetShapeshiftFormID() returns the 1.12
+-- SpellShapeshiftForm.dbc ID, not the stance-bar index. Keep this mapping
+-- limited to Outfitter's existing shapeshift automatic states.
+local	Outfitter_cShapeshiftFormSpecialID =
+{
+	[1] = "Cat",
+	[3] = "Travel",
+	[4] = "Aquatic",
+	[5] = "Bear",
+	[8] = "Bear",
+	[17] = "Battle",
+	[18] = "Defensive",
+	[19] = "Berserker",
+	[30] = "Stealth",
+	[31] = "Moonkin",
+};
+
+local	Outfitter_cShapeshiftSpecialStateIDs =
+{
+	"Battle",
+	"Defensive",
+	"Berserker",
+	"Bear",
+	"Cat",
+	"Aquatic",
+	"Travel",
+	"Moonkin",
+	"Stealth",
+};
+
 local gOutfitter_SpecialState = {};
 
 StaticPopupDialogs["OUTFITTER_CONFIRM_DELETE"] =
@@ -961,9 +991,18 @@ function Outfitter_OnLoad()
 	Outfitter_RegisterEvent(this, "PLAYER_LEAVING_WORLD", Outfitter_PlayerLeavingWorld);
 	Outfitter_RegisterEvent(this, "VARIABLES_LOADED", Outfitter_VariablesLoaded);
 	
-	-- For monitoring mounted, dining and shadowform states
+	-- For monitoring mounted, dining and aura-backed automatic states
 	
 	Outfitter_RegisterEvent(this, "PLAYER_AURAS_CHANGED", Outfitter_UpdateAuraStates);
+	
+	-- ClassicAPI provides a dedicated current-form change event. Keep the
+	-- legacy aura-driven shapeshift refresh as fallback/secondary coverage.
+	
+	if OutfitterClassicAPI
+	and OutfitterClassicAPI.HasShapeshiftFormChangedEvent
+	and OutfitterClassicAPI.HasShapeshiftFormChangedEvent() then
+		Outfitter_RegisterEvent(this, "UPDATE_SHAPESHIFT_FORM", Outfitter_UpdateShapeshiftState);
+	end
 	
 	-- For monitoring plaguelands and battlegrounds
 	
@@ -1103,6 +1142,7 @@ function Outfitter_PlayerLeavingWorld()
 	Outfitter_SuspendEvent(OutfitterFrame, "UPDATE_INVENTORY_ALERTS");
 	Outfitter_SuspendEvent(OutfitterFrame, "SPELLS_CHANGED");
 	Outfitter_SuspendEvent(OutfitterFrame, "PLAYER_AURAS_CHANGED");
+	Outfitter_SuspendEvent(OutfitterFrame, "UPDATE_SHAPESHIFT_FORM");
 	Outfitter_SuspendEvent(OutfitterFrame, "PLAYERBANKSLOTS_CHANGED");
 end
 
@@ -1128,6 +1168,7 @@ function Outfitter_ResumeLoadScreenEvents()
 		Outfitter_ResumeEvent(OutfitterFrame, "UPDATE_INVENTORY_ALERTS");
 		Outfitter_ResumeEvent(OutfitterFrame, "SPELLS_CHANGED");
 		Outfitter_ResumeEvent(OutfitterFrame, "PLAYER_AURAS_CHANGED");
+		Outfitter_ResumeEvent(OutfitterFrame, "UPDATE_SHAPESHIFT_FORM");
 		Outfitter_ResumeEvent(OutfitterFrame, "PLAYERBANKSLOTS_CHANGED");
 		
 		Outfitter_InventoryChanged2();
@@ -4459,12 +4500,43 @@ function Outfitter_UpdateAuraStates()
 		end
 	end
 	
-	-- As of 1.12 aura changes are the only way to detect shapeshifts, so update those too
+	-- Keep shapeshift state synchronized too. The updater uses ClassicAPI's
+	-- direct current-form fact when available and otherwise retains the
+	-- established 1.12 form-list scan.
 	
 	Outfitter_UpdateShapeshiftState();
 end
 
 function Outfitter_UpdateShapeshiftState()
+	local	vFormID = nil;
+	
+	if OutfitterClassicAPI
+	and OutfitterClassicAPI.GetShapeshiftFormID then
+		vFormID = OutfitterClassicAPI.GetShapeshiftFormID();
+	end
+	
+	if vFormID ~= nil then
+		local	vActiveSpecialID = Outfitter_cShapeshiftFormSpecialID[vFormID];
+		
+		for _, vSpecialID in Outfitter_cShapeshiftSpecialStateIDs do
+			local	vIsActive = vSpecialID == vActiveSpecialID;
+			
+			if gOutfitter_SpecialState[vSpecialID] == nil then
+				gOutfitter_SpecialState[vSpecialID] = Outfitter_WearingSpecialOutfit(vSpecialID);
+			end
+			
+			if gOutfitter_SpecialState[vSpecialID] ~= vIsActive then
+				gOutfitter_SpecialState[vSpecialID] = vIsActive;
+				Outfitter_SetSpecialOutfitEnabled(vSpecialID, vIsActive);
+			end
+		end
+		
+		return;
+	end
+	
+	-- Native 1.12 fallback: enumerate the available forms and match their
+	-- localized names exactly as the imported Outfitter path always has.
+	
 	local	vNumForms = GetNumShapeshiftForms();
 	
 	for vIndex = 1, vNumForms do
