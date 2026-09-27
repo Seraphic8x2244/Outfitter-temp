@@ -5911,17 +5911,57 @@ function Outfitter_UpdateDatabaseItemCodes()
 	return vResult;
 end
 
-local	gOutfitter_PaperDollItemSlotButton_OnClick;
-
 function Outfitter_HookPaperDollFrame()
-	gOutfitter_PaperDollItemSlotButton_OnClick = PaperDollItemSlotButton_OnClick;
-	PaperDollItemSlotButton_OnClick = Outfitter_PaperDollItemSlotButton_OnClick
+	for _, vInventorySlot in Outfitter_cSlotNames do
+		local	vSlotButton = getglobal("Character"..vInventorySlot);
+		
+		if vSlotButton then
+			if vSlotButton.HookScript then
+				vSlotButton:HookScript("OnMouseDown", Outfitter_PaperDollItemSlotButton_OnMouseDown);
+				vSlotButton:HookScript("OnClick", Outfitter_PaperDollItemSlotButton_OnClick);
+			else
+				Outfitter_HookPaperDollItemSlotButton(vSlotButton);
+			end
+		end
+	end
+end
+
+function Outfitter_HookPaperDollItemSlotButton(pSlotButton)
+	local	vOriginalOnClick = pSlotButton:GetScript("OnClick");
+	
+	pSlotButton:SetScript("OnClick", function()
+		local	vSlotButton = this;
+		local	vSlotID = vSlotButton:GetID();
+		local	vSlotWasEmpty = GetInventoryItemLink("player", vSlotID) == nil;
+		
+		if vOriginalOnClick then
+			vOriginalOnClick();
+		end
+		
+		Outfitter_PaperDollItemSlotButton_OnClick(vSlotButton, arg1, vSlotWasEmpty);
+	end);
 end
 
 local	Outfitter_cMaxNumQuickSlots = 9;
 local	Outfitter_cSlotIDToInventorySlot = nil;
 
-function Outfitter_PaperDollItemSlotButton_OnClick(pButton, pIgnoreModifiers)
+function Outfitter_PaperDollItemSlotButton_OnMouseDown(pSlotButton)
+	local	vSlotButton = pSlotButton or this;
+	
+	if not vSlotButton then
+		return;
+	end
+	
+	vSlotButton.OutfitterSlotWasEmpty = GetInventoryItemLink("player", vSlotButton:GetID()) == nil;
+end
+
+function Outfitter_PaperDollItemSlotButton_OnClick(pSlotButton, pButton, pSlotWasEmpty)
+	local	vSlotButton = pSlotButton or this;
+	
+	if not vSlotButton then
+		return;
+	end
+	
 	-- Build the table to convert from slot ID to inventory slot name
 	
 	if not Outfitter_cSlotIDToInventorySlot then
@@ -5936,20 +5976,26 @@ function Outfitter_PaperDollItemSlotButton_OnClick(pButton, pIgnoreModifiers)
 	
 	--
 	
-	local	vSlotID = this:GetID();
+	local	vSlotID = vSlotButton:GetID();
 	local	vInventorySlot = Outfitter_cSlotIDToInventorySlot[vSlotID];
-	local	vItemLink = GetInventoryItemLink("player", vSlotID);
-	local	vSlotIsEmpty = vItemLink == nil;
+	local	vSlotWasEmpty = pSlotWasEmpty;
 	
-	-- Call the original function
+	if vSlotWasEmpty == nil then
+		vSlotWasEmpty = vSlotButton.OutfitterSlotWasEmpty;
+	end
 	
-	gOutfitter_PaperDollItemSlotButton_OnClick(pButton, pIgnoreModifiers);
+	vSlotButton.OutfitterSlotWasEmpty = nil;
 	
-	-- If there's an item on the cursor then open the slots otherwise
-	-- make sure they're closed
+	if vSlotWasEmpty == nil then
+		vSlotWasEmpty = GetInventoryItemLink("player", vSlotID) == nil;
+	end
+	
+	-- The paperdoll's own OnClick handler has already run. QuickSlots is
+	-- attached additively to the slot button and never replaces Blizzard's
+	-- global PaperDollItemSlotButton_OnClick function.
 	
 	if not OutfitterQuickSlots:IsVisible()
-	and (CursorHasItem() or vSlotIsEmpty) then
+	and (CursorHasItem() or vSlotWasEmpty) then
 		-- Hide the tooltip so that it isn't in the way
 		
 		GameTooltip:Hide();
