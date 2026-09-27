@@ -4929,6 +4929,7 @@ function Outfitter_Initialize()
 	-- Hook QuickSlots into the paper doll frame
 	
 	Outfitter_HookPaperDollFrame();
+	Outfitter_CheckPfUIEquipmentManagerConflict();
 	
 	-- Done initializing
 	
@@ -5911,14 +5912,70 @@ function Outfitter_UpdateDatabaseItemCodes()
 	return vResult;
 end
 
+function Outfitter_IsPfUIEquipmentManagerActive()
+	return pfEqMgrToggleButton
+	and pfUI_config
+	and (not pfUI_config.disabled or pfUI_config.disabled.equipmentmanager ~= "1");
+end
+
 function Outfitter_UpdatePaperDollButtonPosition()
-	-- pfUI's optional Equipment Manager places its launcher in the same
-	-- paperdoll corner as Outfitter's legacy launcher. Keep both controls
-	-- independently clickable when that module is present.
-	if pfEqMgrToggleButton then
-		OutfitterButton:ClearAllPoints();
+	OutfitterButton:ClearAllPoints();
+	
+	if Outfitter_IsPfUIEquipmentManagerActive()
+	and gOutfitter_Settings
+	and gOutfitter_Settings.Options
+	and gOutfitter_Settings.Options.PfUIEquipmentManagerChoice == "Both" then
 		OutfitterButton:SetPoint("RIGHT", pfEqMgrToggleButton, "LEFT", -4, 0);
+	else
+		OutfitterButton:SetPoint("TOPRIGHT", OutfitterButtonFrame, "TOPRIGHT", -32, -40);
 	end
+end
+
+function Outfitter_CheckPfUIEquipmentManagerConflict()
+	if not Outfitter_IsPfUIEquipmentManagerActive()
+	or not gOutfitter_Settings
+	or not gOutfitter_Settings.Options
+	or gOutfitter_Settings.Options.PfUIEquipmentManagerChoice == "Both" then
+		return;
+	end
+	
+	OutfitterPfUIConflictFrame:Show();
+end
+
+function Outfitter_PfUIConflictUseOutfitter()
+	if not pfUI_config then
+		return;
+	end
+	
+	if not pfUI_config.disabled then
+		pfUI_config.disabled = {};
+	end
+	
+	pfUI_config.disabled.equipmentmanager = "1";
+	ReloadUI();
+end
+
+function Outfitter_PfUIConflictUsePfUI()
+	for vAddonIndex = 1, GetNumAddOns() do
+		local vAddonName = GetAddOnInfo(vAddonIndex);
+		
+		if vAddonName == "Outfitter" then
+			DisableAddOn(vAddonIndex);
+			ReloadUI();
+			return;
+		end
+	end
+end
+
+function Outfitter_PfUIConflictUseBoth()
+	if not gOutfitter_Settings
+	or not gOutfitter_Settings.Options then
+		return;
+	end
+	
+	gOutfitter_Settings.Options.PfUIEquipmentManagerChoice = "Both";
+	Outfitter_UpdatePaperDollButtonPosition();
+	OutfitterPfUIConflictFrame:Hide();
 end
 
 function Outfitter_HookPaperDollFrame()

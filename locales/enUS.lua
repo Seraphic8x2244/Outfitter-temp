@@ -236,6 +236,11 @@ Outfitter_cGuildURL2 = "http://www.forgeguild.com";
 
 Outfitter_cOpenOutfitter = "Open Outfitter";
 
+Outfitter_cPfUIConflictMessage = "Outfitter detected pfUI Equipment Manager.\n\nBoth addons add equipment controls to the character window and visually conflict. Choose which addon you would like to use, or keep both.";
+Outfitter_cPfUIConflictUseOutfitter = "Use Outfitter";
+Outfitter_cPfUIConflictUsePfUI = "Use pfUI Equipment Manager";
+Outfitter_cPfUIConflictUseBoth = "Use Both";
+
 Outfitter_cArgentDawnOutfitDescription = "This outfit will automatically be worn whenever you're in the Plaguelands";
 Outfitter_cRidingOutfitDescription = "This outfit will automatically be worn whenever you're mounted";
 Outfitter_cDiningOutfitDescription = "This outfit will automatically be worn whenever you're eating or drinking";

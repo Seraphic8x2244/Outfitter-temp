@@ -1520,4 +1520,51 @@
 			</OnEvent>
 		</Scripts>
 	</Frame>
+
+	<Frame name="OutfitterPfUIConflictFrame" parent="UIParent" toplevel="true" enableMouse="true" frameStrata="DIALOG" hidden="true">
+		<Size><AbsDimension x="520" y="150" /></Size>
+		<Anchors><Anchor point="CENTER" /></Anchors>
+		<Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
+			<BackgroundInsets><AbsInset left="11" right="12" top="12" bottom="11" /></BackgroundInsets>
+			<TileSize><AbsValue val="32" /></TileSize>
+			<EdgeSize><AbsValue val="32" /></EdgeSize>
+		</Backdrop>
+		<Layers>
+			<Layer level="ARTWORK">
+				<FontString name="$parentText" text="Outfitter_cPfUIConflictMessage" inherits="GameFontHighlight">
+					<Size><AbsDimension x="480" y="72" /></Size>
+					<Anchors>
+						<Anchor point="TOP"><Offset><AbsDimension x="0" y="-20" /></Offset></Anchor>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Button name="$parentUseOutfitterButton" inherits="UIPanelButtonTemplate" text="Outfitter_cPfUIConflictUseOutfitter">
+				<Size><AbsDimension x="130" y="24" /></Size>
+				<Anchors>
+					<Anchor point="BOTTOMLEFT"><Offset><AbsDimension x="30" y="20" /></Offset></Anchor>
+				</Anchors>
+				<Scripts><OnClick>Outfitter_PfUIConflictUseOutfitter();</OnClick></Scripts>
+			</Button>
+			<Button name="$parentUsePfUIButton" inherits="UIPanelButtonTemplate" text="Outfitter_cPfUIConflictUsePfUI">
+				<Size><AbsDimension x="190" y="24" /></Size>
+				<Anchors>
+					<Anchor point="LEFT" relativeTo="$parentUseOutfitterButton" relativePoint="RIGHT">
+						<Offset><AbsDimension x="10" y="0" /></Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts><OnClick>Outfitter_PfUIConflictUsePfUI();</OnClick></Scripts>
+			</Button>
+			<Button name="$parentUseBothButton" inherits="UIPanelButtonTemplate" text="Outfitter_cPfUIConflictUseBoth">
+				<Size><AbsDimension x="110" y="24" /></Size>
+				<Anchors>
+					<Anchor point="LEFT" relativeTo="$parentUsePfUIButton" relativePoint="RIGHT">
+						<Offset><AbsDimension x="10" y="0" /></Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts><OnClick>Outfitter_PfUIConflictUseBoth();</OnClick></Scripts>
+			</Button>
+		</Frames>
+	</Frame>
 </UI>

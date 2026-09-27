@@ -1,8 +1,8 @@
 ## Interface: 11200
 ## Title: Outfitter-dev
 ## Notes: Outfitter
-## Version: 2.0.31-dev
-## OptionalDeps: TankPoints
+## Version: 2.0.32-dev
+## OptionalDeps: TankPoints, pfUI
 ## RequiredDeps:
 ## SavedVariablesPerCharacter: gOutfitter_Settings
 
