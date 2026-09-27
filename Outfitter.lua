@@ -5911,7 +5911,19 @@ function Outfitter_UpdateDatabaseItemCodes()
 	return vResult;
 end
 
+function Outfitter_UpdatePaperDollButtonPosition()
+	-- pfUI's optional Equipment Manager places its launcher in the same
+	-- paperdoll corner as Outfitter's legacy launcher. Keep both controls
+	-- independently clickable when that module is present.
+	if pfEqMgrToggleButton then
+		OutfitterButton:ClearAllPoints();
+		OutfitterButton:SetPoint("RIGHT", pfEqMgrToggleButton, "LEFT", -4, 0);
+	end
+end
+
 function Outfitter_HookPaperDollFrame()
+	Outfitter_UpdatePaperDollButtonPosition();
+	
 	for _, vInventorySlot in Outfitter_cSlotNames do
 		local	vSlotButton = getglobal("Character"..vInventorySlot);
 		
