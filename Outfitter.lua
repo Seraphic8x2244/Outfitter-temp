@@ -4332,31 +4332,71 @@ function Outfitter_GetPlayerAuraStates()
 	local		vBuffIndex = 1;
 	
 	while true do
-		vTexture = UnitBuff("player", vBuffIndex);
+		local	vAuraName, vAuraIcon, vAuraSpellID = nil, nil, nil;
 		
-		if not vTexture then
-			return vAuraStates;
+		if OutfitterClassicAPI
+		and OutfitterClassicAPI.GetHelpfulAuraInfo then
+			vAuraName, vAuraIcon, vAuraSpellID = OutfitterClassicAPI.GetHelpfulAuraInfo(vBuffIndex);
 		end
 		
-		local	vStartIndex, vEndIndex, vTextureName = string.find(vTexture, "([^%\\]*)$");
+		local	vTexture = vAuraIcon;
+		
+		if not vAuraSpellID then
+			vTexture = UnitBuff("player", vBuffIndex);
+			
+			if not vTexture then
+				return vAuraStates;
+			end
+		elseif not vTexture then
+			-- Preserve the native icon fallback if ClassicAPI has the aura but
+			-- cannot resolve its icon metadata for this entry.
+			vTexture = UnitBuff("player", vBuffIndex);
+		end
+		
+		local	vTextureName = nil;
+		
+		if vTexture then
+			local	vStartIndex, vEndIndex;
+			vStartIndex, vEndIndex, vTextureName = string.find(vTexture, "([^%\\]*)$");
+		end
 		
 		--
 		
-		local	vSpecialID = gOutfitter_AuraIconSpecialID[vTextureName];
+		local	vSpecialID = nil;
+		
+		if vTextureName then
+			vSpecialID = gOutfitter_AuraIconSpecialID[vTextureName];
+		end
 		
 		if vSpecialID then
 			vAuraStates[vSpecialID] = true;
 		
 		--
 		
-		elseif not vAuraStates.Dining
+		elseif vTextureName
+		and not vAuraStates.Dining
 		and string.find(vTextureName, "INV_Drink") then
 			vAuraStates.Dining = true;
 		
 		--
 		
 		else
-			local	vTextLine1, vTextLine2 = Outfitter_GetBuffTooltipText(vBuffIndex);
+			local	vTextLine1 = vAuraName;
+			local	vTextLine2 = nil;
+			
+			-- ClassicAPI supplies the aura name directly. Keep tooltip reads only
+			-- for the native fallback, plus Riding's legacy tooltip heuristic when
+			-- IsMounted() itself isn't available.
+			if not vTextLine1
+			or vRidingState == nil then
+				local	vLegacyTextLine1, vLegacyTextLine2 = Outfitter_GetBuffTooltipText(vBuffIndex);
+				
+				if not vTextLine1 then
+					vTextLine1 = vLegacyTextLine1;
+				end
+				
+				vTextLine2 = vLegacyTextLine2;
+			end
 			
 			if vTextLine1 then
 				local	vSpecialID = gOutfitter_SpellNameSpecialID[vTextLine1];
